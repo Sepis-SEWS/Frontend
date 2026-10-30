@@ -1,0 +1,1 @@
+"""Figma-derived visual tokens."""

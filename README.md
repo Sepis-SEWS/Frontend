@@ -1,40 +1,116 @@
-# SEWS — ICU 패혈증 조기 경보 시스템
+# SEWS · Streamlit ICU 대시보드
 
-PhysioNet/CinC Challenge 2019의 ICU 환자 시간별 기록으로 **최근 24시간 관찰 → 패혈증 약 6시간 조기경보**를 구현하는 팀 프로젝트입니다. 과제/연구용 프로토타입으로, 실제 임상 적용이 검증된 의료기기가 아닙니다.
+Figma Sepsis 화면을 기준으로 구현한 연구용 대시보드다. 통합 모니터, 환자 상세, 경보 확인 및 평가·조치 기록을 제공한다. 현재 Backend는 README만 있으므로 기본 실행은 **명시적인 합성 데이터 데모 모드**다.
 
-## 레포지토리 구성
-- [AI](https://github.com/Sepis-SEWS/AI): 데이터·특징·XGBoost/LSTM·앙상블·검증·SHAP·Calibration
-- [Backend](https://github.com/Sepis-SEWS/Backend): FastAPI 모델 서빙 및 예측 API
-- [Frontend](https://github.com/Sepis-SEWS/Frontend): Streamlit 임상 모니터링 화면
+## 실행
 
-## 공통 원칙
-- 공식 `SepsisLabel`은 이미 발병 6시간 전에 양성으로 전환된 라벨이므로 **추가로 6시간 이동하지 않음**.
-- 환자별 Train/Validation/Test 분리, 과거부터 현재까지 데이터만 사용, 평가 데이터로 전처리 통계 학습 금지.
-- Streamlit은 AI 모델 파일을 직접 읽지 않음. 반드시 FastAPI를 호출.
-- 성능 목표(미달성): AUROC ≥0.82, AUPRC ≥0.40, Brier ≤0.15, CPU 4코어 추론 평균 ≤200ms.
-- 실험 결과 없이 달성 여부를 주장하지 않음. 실제 측정값과 예시를 구분.
-- 환경: Python 3.9~3.11, PyTorch ≥2.0 또는 TensorFlow ≥2.10, Docker Compose, Ubuntu 22.04/WSL2 허용.
-- 유형힌트·docstring·Conventional Commits·고정 라이브러리 버전 적용.
+Python 3.11 기준. Frontend 폴더에서 실행해야 프로젝트 테마 설정을 읽는다.
 
-## API 계약 초안 (개발 전 협의 필요)
-요청: 환자 식별자 + 현재 시점까지의 최근 24시간 기록(JSON). 응답: 위험 점수(`risk_score`), Calibration 점수(`calibrated_probability`), 위험 단계(`risk_level`), 계산 가능한 SOFA 요소와 SHAP 설명. 누락 필드는 null 또는 '계산 불가' 명시. `Warning 0.5~0.75`, `Alert ≥0.75`는 과제 예시이며 실제 임계값은 검증 데이터로 확정.
+```bash
+cd Frontend
+python3.11 -m venv .venv
+source .venv/bin/activate
+python -m pip install -r requirements.txt
+streamlit run app.py
+```
 
-## 구현 주의
-과제에 기재된 활력징후 8개/검사 10개 중 원본 칼럼명과 불일치하는 항목(RR·SpO2·INR·PaO2/FiO2)이 있음. 팀 계획의 원본 실제 변수는 활력징후 7개 + 검사 9개(총 16개). 누락 원천정보(GCS, 승압제, 소변량 등) 없이 완전한 SOFA/qSOFA 산출 불가. 대체 계산/미지원 상태를 명확히 기록해야 함.
+기본 주소는 http://localhost:8501 이다. 현재 작업 환경에는 `.venv`를 준비했고 127.0.0.1:8501에서 로컬 서버를 실행했다. 이 환경의 가상환경 Python은 임시 폴더에 있으므로 임시 파일 정리 후에는 위 명령으로 다시 생성한다. `.env.example`은 참고 파일이며 자동으로 로드하지 않는다.
 
-## Frontend 요구사항
-Streamlit 사용. **반드시 FastAPI를 통해 예측**하며 직접 모델 로드 금지.
+## 구현 기능
 
-- 환자 목록 화면: 현재 위험도 신호등 표시(초록/노랑/빨강).
-- 환자 상세: HR/MAP/SpO2 등 Vital 추이, 위험도 시계열, 계산 가능한 SOFA 구성요소 막대 그래프.
-- SHAP Force/Waterfall Plot 및 Calibration Curve 표시.
-- 경보 2단계: 예시 Warning [0.5, 0.75), Alert ≥0.75. 임계값 검증 후 확정.
-- API 요청 중/오류/모델 미로딩/결측값 상태 표기.
-- Docker Compose로 Backend와 함께 실행, 버전 고정 및 README 실행 절차.
-- **현재 상태:** 초기 README 및 요구사항 정리. 실제 UI/API 연동 전.
+- **통합 모니터:** 전체 환자·고위험·주의·미확인 경보 집계, 검색·위험 단계·담당자·미확인 필터, ID 기반 환자 선택, 관측 미리보기, 페이지 조회.
+- **환자 상세:** 모델 점수, 관측·예측 시각, 과거 24시간 점수·생체/검사 차트, 결측 표시, 설명 기여도, SOFA 계산 불가 사유.
+- **경보 이력:** 기간·환자·담당·확인 상태 필터, 발생 당시 점수, 확인자·시각, 평가·조치 이력.
+- **확인·기록:** 명시적 확인, 평가/조치 폼 검증, 저장 실패 시 초안 유지, 결과 불명 요청의 동일 키·본문 재시도, 성공 후 재조회.
+- **세션·갱신:** 페이지 이동 시 검색 조건 유지, 세션별 데모 저장소, 선택적인 30초 모니터 자동 갱신, 목록 순서 고정, 간결 보기.
 
-## 구현 우선순위
-API Mock JSON으로 화면 설계 → `/health` 통신 → 환자 목록·상세 → 위험도/경보 → SHAP/Calibration → 통합 테스트.
+데모는 24명의 합성 환자와 4건의 합성 경보로 시작한다. 확인·기록은 해당 브라우저 세션의 가상 저장이며 재접속 시 유지되지 않는다. 합성 설명은 실제 SHAP와 구분해 표시한다. 미래 점수 곡선은 생성하지 않는다. 점수는 발생 확률이나 진단을 뜻하지 않는다.
 
-## 팀 역할 및 개인 기여
-추후 팀원별 담당/실제 커밋을 기록할 것.
+## 실제 API 연결
+
+```bash
+export SEWS_MODE=api
+export API_BASE_URL=http://127.0.0.1:8000
+# 서버가 요구하는 경우에만 설정 (실제 토큰을 저장소에 넣지 않는다)
+export SEWS_API_TOKEN='your-token'
+streamlit run app.py
+```
+
+API 주소 누락이나 연결 오류는 오류로 표시하며 데모로 자동 전환하지 않는다. `/health`, `/patients`, `/patients/{id}`, `/alerts`, 확인·기록 쓰기 API가 필요하다. `/predict`를 UI 재실행마다 호출하지 않는다. API 스키마·집계·추가 필드는 [계약서](docs/API_CONTRACT.md)를 따른다.
+
+현재 토큰 설정은 제한된 프로토타입 배포용 서버 자격정보다. 사용자별 로그인·권한별 세션 연결은 아직 없고 작성자는 Backend가 결정해야 한다. 실제 환자 데이터 사용 전에 인증 연동과 서버의 접근 제어·영구 저장을 구현하고 검증해야 한다. 환자·초안·토큰은 전역 Streamlit 캐시에 보관하지 않는다.
+
+## 구조 설계
+
+### 시스템 흐름
+
+```text
+브라우저 ↔ Streamlit 서버 ↔ FastAPI ↔ AI 모델·DB
+             화면·세션       추론·경보·영구 저장
+```
+
+- **Frontend:** 화면 렌더링 · 필터 · 환자 선택 · 입력 초안 · API 응답 검증
+- **Backend:** 인증·권한 · 환자 조회 · 모델 추론 · 위험 판정 · 경보 생성 · 기록 저장
+- **접근 경계:** Streamlit → HTTP API · 모델 파일·원본 데이터·DB 직접 접근 없음
+
+### 화면 구성
+
+| 화면 | 주요 영역 |
+|---|---|
+| 공통 프레임 | SEWS 헤더 · 연결 상태 · 사이드바 · 데모 표시 |
+| 통합 모니터 | 요약 카드 → 경보 배너 → 검색·필터 → 환자 표 → 선택 환자 요약 |
+| 환자 상세 | 위험 점수 → 24시간 추세 → 생체·검사 / 기여도 → 경보 확인·기록 |
+| 경보 이력 | 기간·상태 필터 → 경보 목록 → 선택 경보 → 평가·조치 이력 |
+
+### 모듈 구성
+
+```text
+app.py                 공통 진입점·명시적 페이지 등록
+config.py / state.py   환경 설정·세션 상태·조회 무효화
+views/                 통합 모니터·환자 상세·경보 이력 조합
+components/            공통 프레임·표·카드·차트·폼
+services/              Gateway·HTTP 어댑터·세션별 데모·멱등 쓰기
+domain/                Pydantic 계약·점수 및 시각 표시 변환
+ui/                    Figma 토큰·자체 CSS
+tests/                 API·불변식·쓰기·AppTest
+```
+
+```text
+app → views → components           화면 조립
+         └→ services → domain      데이터 접근·계약 검증
+               ├→ API Gateway      실제 서버
+               └→ Demo Gateway     세션별 합성 데이터
+```
+
+### 상태·갱신·저장
+
+| 항목 | 관리 기준 |
+|---|---|
+| 내비게이션 | `st.Page` · `st.navigation` · 명시적 화면 전환 |
+| UI 상태 | `st.session_state` · 환자/경보 ID · 필터 · 경보별 초안 |
+| 조회 | 세션별 결과 보관 · 수동 갱신 · 선택적 30초 `st.fragment` |
+| 목록 | ID 기반 선택 · 자동 갱신 중 순서 고정 · 수동 갱신 시 재정렬 |
+| 입력 | `st.form` · 자동 갱신 영역 분리 · 실패 시 제출 초안 유지 |
+| 저장 | 경보 확인 → 폼 검증 → 멱등 키 전송 → 성공 응답 → 재조회 |
+| 오류 | 과거 데이터 표시 · 접근 거부 시 결과 제거 · API→데모 자동 대체 금지 |
+| 데이터 표현 | null≠0 · 점수≠확률 · 관측/예측 시각 분리 · 결측 곡선 연결 금지 |
+
+### 디자인·확장
+
+- **디자인:** Figma 색상·간격 토큰 · Streamlit 기본 위젯 · Plotly 차트 · 공통 카드
+- **간결 보기:** 표 열 축소 · 보조 패널 세로 배치 · 태블릿 대응
+- **후속 범위:** 담당자 변경 · 경보 종료 · 모델 운영 · 사용자별 인증 연동
+
+## 검증
+
+```bash
+python -m pip install -r requirements-dev.txt
+python -m pytest -q
+ruff check .
+```
+
+2026-10-30 / Python 3.11.17 기준 **34개 테스트 통과**, Ruff 및 diff 공백 검사 통과. AppTest에서 필터·선택·상세 이동·확인·폼 검증·저장·재시도·두 세션 격리를 확인했고 실제 로컬 서버의 `/_stcore/health`가 `ok`를 반환했다.
+
+브라우저 연결이 제공되지 않고 Chrome 접근이 시간 초과되어 **1440/1024px 시각 비교, 실제 표 행 클릭, 30초 타이머, WebSocket 재연결은 아직 수동 검증이 필요**하다. 기본 위젯·시스템 sans-serif로 구현했으므로 Figma의 고정 폭·폰트·복합 표 셀과 차이가 있다. 간결 보기를 켜면 표 열을 줄이고 상세 보조 패널을 세로로 배치한다.
+
+Backend 실제 연결, 인증별 접근 제어, 실제 모델 추론, 영구 저장은 완료로 간주하지 않는다. API 오류는 MockTransport로, 기록은 세션별 데모로 검증했다.

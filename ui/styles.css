@@ -1,0 +1,17 @@
+.sews-brand { color: #2563eb; font-size: 28px; font-weight: 700; margin: 0; }
+.sews-header { display:flex; flex-wrap:wrap; align-items:center; gap:16px; padding:16px 24px; background:white; border:1px solid #dce3ed; border-radius:12px; margin-bottom:16px; }
+.sews-header .sews-context { flex:1; color:#52637a; font-size:14px; }
+.sews-status { font-size:12px; color:#52637a; }
+.sews-card { background:white; border:1px solid #dce3ed; border-radius:12px; padding:20px 24px; min-height:148px; }
+.sews-card-label { font-size:14px; color:#52637a; margin-bottom:12px; }
+.sews-card-value { font-size:32px; font-weight:700; line-height:1.5; }
+.sews-card-note { font-size:12px; color:#52637a; margin-top:8px; }
+.sews-badge { display:inline-block; border-radius:6px; background:#f6f8fb; padding:6px 12px; font-size:14px; font-weight:500; }
+.sews-score { font-size:32px; font-weight:700; line-height:1.5; margin:8px 0; }
+.sews-title { font-size:28px; line-height:1.5; font-weight:700; margin:8px 0; color:#172b4d; }
+.st-key-sews_panel_risk_chart,
+.st-key-sews_panel_care_form,
+.st-key-sews_panel_patient_preview,
+.st-key-sews_panel_patient_risk,
+.st-key-sews_panel_observations,
+.st-key-sews_panel_contributions { background:#fff; border-radius:12px; padding:24px; }

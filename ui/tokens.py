@@ -1,0 +1,12 @@
+"""Design tokens from Sepsis Figma; warning uses a supplemental accessible color."""
+BG = "#F6F8FB"
+PANEL = "#FFFFFF"
+TEXT = "#172B4D"
+MUTED = "#52637A"
+BORDER = "#DCE3ED"
+BLUE = "#2563EB"
+BLUE_SOFT = "#EFF6FF"
+RED = "#B42318"
+RED_SOFT = "#FEF3F2"
+GREEN = "#176B57"
+RISK_COLORS = {"high": RED, "warning": "#B54708", "low": GREEN, "unavailable": MUTED}
